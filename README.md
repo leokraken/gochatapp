@@ -5,10 +5,10 @@ gochatapp
 Go and Angular.js Chat Application using Socket.io
 
 ## Screenshots
-### Login
+##### Login
 ![Imgur](http://i.imgur.com/5wXjNQR.png)
 
-### Chat application
+##### Chat application
 ![Imgur](http://i.imgur.com/aMyoUiC.png)
 
 
