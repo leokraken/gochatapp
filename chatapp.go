@@ -21,9 +21,11 @@ func main() {
 
 	sio.Of("/chat").On("connect", func(ns *socketio.NameSpace) {
 		log.Println("connected:", ns.Id(), " in channel ", ns.Endpoint())
+		lmMutex.Lock()
 		for i, _ := range lastMessages {
 			ns.Emit("message", lastMessages[i])
 		}
+		lmMutex.Unlock()
 	})
 
 	sio.Of("/chat").On("joined_message", func(ns *socketio.NameSpace, message string) {
