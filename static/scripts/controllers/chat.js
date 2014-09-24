@@ -7,13 +7,22 @@ angular.module('chatWebApp')
         $scope.username = false;
         $scope.inputUsername = '';
         $scope.glued = true;
+        var Notification = window.Notification || window.mozNotification || window.webkitNotification;
 
         socket.forward('message', $scope);
         $scope.$on('socket:message', function (ev, data) {
             if ($scope.messages.length > 100) {
                 $scope.messages.splice(0, 1);
             }
-            $scope.messages.push(JSON.parse(data));
+            var msg = JSON.parse(data);
+            $scope.messages.push(msg);
+            if (msg.type == 'message') {
+                var instance = new Notification(
+                    msg.username + " says:", {
+                         body: msg.message
+                     }
+                );
+            }
         });
 
         $scope.sendMessage = function () {
@@ -25,5 +34,9 @@ angular.module('chatWebApp')
         $scope.setUsername = function () {
             $scope.username = $scope.inputUsername;
             socket.emit('joined_message', $scope.username);
+            // setUsername is called once and can be regarded as "login"
+            Notification.requestPermission(function (permission) {
+                // console.log(permission);
+            });
         };
     }]);
