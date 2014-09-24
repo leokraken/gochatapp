@@ -18,6 +18,7 @@ angular.module('chatWebApp')
 
         $scope.sendMessage = function () {
             socket.emit('send_message', $scope.newMessage);
+            $scope.messages.push($scope.newMessage);
             $scope.newMessage = '';
         };
 
