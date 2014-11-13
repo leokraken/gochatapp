@@ -8,7 +8,6 @@ import (
 	"runtime"
 	"sync"
 	"time"
-
 	"github.com/googollee/go-socket.io"
 )
 
