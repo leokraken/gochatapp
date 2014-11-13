@@ -1,7 +1,7 @@
 'use strict';
 
 angular.module('chatWebApp')
-    .controller('ChatCtrl', function ($scope, socket) {
+    .controller('ChatCtrl', ['$scope', 'socket', function ($scope, socket) {
         $scope.messages = [];
         $scope.newMessage = '';
         $scope.username = false;
@@ -18,6 +18,7 @@ angular.module('chatWebApp')
 
         $scope.sendMessage = function () {
             socket.emit('send_message', $scope.newMessage);
+            $scope.messages.push($scope.newMessage);
             $scope.newMessage = '';
         };
 
@@ -25,4 +26,4 @@ angular.module('chatWebApp')
             $scope.username = $scope.inputUsername;
             socket.emit('joined_message', $scope.username);
         };
-    });
+    }]);

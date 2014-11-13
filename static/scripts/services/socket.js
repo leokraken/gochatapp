@@ -1,10 +1,8 @@
 'use strict';
 
 angular.module('chatWebApp')
-    .factory('socket', function (socketFactory) {
-        var socket = socketFactory({
-            ioSocket: io.connect('/chat')
-        });
+    .factory('socket', ['socketFactory', function (socketFactory) {
+        var socket = socketFactory();
         socket.forward('error');
         return socket;
-    });
+    }]);

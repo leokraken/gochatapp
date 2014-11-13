@@ -2,13 +2,18 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/googollee/go-socket.io"
 	"log"
 	"net/http"
+	"os"
 	"runtime"
 	"sync"
 	"time"
+
+	"github.com/googollee/go-socket.io"
 )
+
+// just a random string, just looks like a path
+const websocketRoom = "/chat"
 
 func main() {
 	lastMessages := []string{}
@@ -17,48 +22,73 @@ func main() {
 	runtime.GOMAXPROCS((runtime.NumCPU() * 2) + 1)
 
 	// Configuring socket.io Server
-	sio := socketio.NewSocketIOServer(&socketio.Config{})
+	sio, err := socketio.NewServer(nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	sio.Of("/chat").On("connect", func(ns *socketio.NameSpace) {
-		log.Println("connected:", ns.Id(), " in channel ", ns.Endpoint())
+	sio.On("connection", func(so socketio.Socket) {
+		var username string
+		username = "User-" + so.Id()
+		log.Println("on connection", username)
+		so.Join(websocketRoom)
+
 		lmMutex.Lock()
 		for i, _ := range lastMessages {
-			ns.Emit("message", lastMessages[i])
+			so.Emit("message", lastMessages[i])
 		}
 		lmMutex.Unlock()
-	})
 
-	sio.Of("/chat").On("joined_message", func(ns *socketio.NameSpace, message string) {
-		ns.Session.Values["username"] = message
-		res := map[string]interface{}{
-			"username": message,
-			"dateTime": time.Now().UTC().Format(time.RFC3339Nano),
-			"type":     "joined_message",
-		}
-		jsonRes, _ := json.Marshal(res)
-		sio.In("/chat").Broadcast("message", string(jsonRes))
+		so.On("joined_message", func(message string) {
+			username = message
+			log.Println("joined_message", message)
+			res := map[string]interface{}{
+				"username": username,
+				"dateTime": time.Now().UTC().Format(time.RFC3339Nano),
+				"type":     "joined_message",
+			}
+			jsonRes, _ := json.Marshal(res)
+			so.Emit("message", string(jsonRes))
+			so.BroadcastTo(websocketRoom, "message", string(jsonRes))
+		})
+		so.On("send_message", func(message string) {
+			log.Println("send_message from", username)
+			res := map[string]interface{}{
+				"username": username,
+				"message":  message,
+				"dateTime": time.Now().UTC().Format(time.RFC3339),
+				"type":     "message",
+			}
+			jsonRes, _ := json.Marshal(res)
+			lmMutex.Lock()
+			if len(lastMessages) == 100 {
+				lastMessages = lastMessages[1:100]
+			}
+			lastMessages = append(lastMessages, string(jsonRes))
+			lmMutex.Unlock()
+			so.Emit("message", string(jsonRes))
+			so.BroadcastTo(websocketRoom, "message", string(jsonRes))
+		})
+		so.On("disconnection", func() {
+			log.Println("on disconnect", username)
+		})
 	})
-
-	sio.Of("/chat").On("send_message", func(ns *socketio.NameSpace, message string) {
-		res := map[string]interface{}{
-			"username": ns.Session.Values["username"],
-			"message":  message,
-			"dateTime": time.Now().UTC().Format(time.RFC3339),
-			"type":     "message",
-		}
-		jsonRes, _ := json.Marshal(res)
-		lmMutex.Lock()
-		if len(lastMessages) == 100 {
-			lastMessages = lastMessages[1:100]
-		}
-		lastMessages = append(lastMessages, string(jsonRes))
-		lmMutex.Unlock()
-		sio.In("/chat").Broadcast("message", string(jsonRes))
+	sio.On("error", func(so socketio.Socket, err error) {
+		log.Println("error:", err)
 	})
 
 	// Sets up the handlers and listen on port 8080
-	sio.Handle("/", http.FileServer(http.Dir("./templates/")))
-	sio.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
-	log.Println("listening on port 8080")
-	http.ListenAndServe(":8080", sio)
+	http.Handle("/socket.io/", sio)
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./static/"))))
+	http.Handle("/", http.FileServer(http.Dir("./templates/")))
+
+	// Default to :8080 if not defined via environmental variable.
+	var listen string = os.Getenv("LISTEN")
+
+	if listen == "" {
+		listen = ":8080"
+	}
+
+	log.Println("listening on", listen)
+	http.ListenAndServe(listen, nil)
 }
