@@ -50,7 +50,6 @@ angular.module('chatWebApp')
             socket.emit('joined_message', $scope.username);
             // setUsername is called once and can be regarded as "login"
             Notification.requestPermission(function (permission) {
-                // console.log(permission);
             });
         };
     }]);
