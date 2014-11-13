@@ -11,7 +11,7 @@ import (
 	"github.com/googollee/go-socket.io"
 )
 
-// just a random string, just looks like a path
+// Should look like path
 const websocketRoom = "/chat"
 
 func main() {
