@@ -34,7 +34,7 @@
                 <h1>Chat ✍</h1>
             </div>
             <div scroll-glue class="panel-body" style="height: 600px; max-height: 80%; overflow-y: scroll;">
-                <section ng-repeat="message in messages" ng-class="{'pull-right': message.type === 'joined_message'}">
+                <section ng-repeat="message in messages track by $index" ng-class="{'pull-right': message.type === 'joined_message'}">
                     <small class="text-info" ng-show="message.type === 'joined_message'"><i>[<b ng-bind="message.username"></b>]</i> joined </small>
                     <small class="text-info" am-time-ago="message.dateTime"></small>
                     <p ng-show="message.type == 'message'">[<label ng-bind="message.username"></label>] <span ng-bind="message.message"></span></p>
