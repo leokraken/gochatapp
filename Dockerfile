@@ -1,5 +1,7 @@
 FROM golang:1.7-alpine
 
+EXPOSE 8080
+
 WORKDIR /home/app
 RUN apk update && \
     apk add git && \
