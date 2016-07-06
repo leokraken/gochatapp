@@ -9,26 +9,12 @@ import (
 	"sync"
 	"time"
 	"github.com/googollee/go-socket.io"
-	"database/sql"
-	_ "github.com/lib/pq"
 )
 
 // Should look like path
 const websocketRoom = "/chat"
 
 func main() {
-
-     	pg_user := os.Getenv("PG_USER")
-	pg_db := os.Getenv("PG_DB")
-	pg_host := os.Getenv("PG_HOST")
-	pg_password := os.Getenv("PG_PASSWORD")
-	//pg_port := os.Getenv("PG_PORT")
-
-
-	db, err := sql.Open("postgres", "user=" +pg_user+ " host=" +pg_host+ " dbname=" + pg_db + " password=" + pg_password)
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	lastMessages := []string{}
 	var lmMutex sync.Mutex
@@ -67,12 +53,6 @@ func main() {
 		})
 		so.On("send_message", func(message string) {
 			log.Println("send_message from", username)
-			//to db
-			_, err := db.Exec("INSERT INTO messages(usuario, message) VALUES($1, $2)", username, message)
-			if err != nil {
-				log.Fatal(err)
-			}
-
 			res := map[string]interface{}{
 				"username": username,
 				"message":  message,
